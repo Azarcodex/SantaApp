@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 // --- Sub-Components ---
 
@@ -80,6 +81,7 @@ const SantaHat = () => (
 // --- Main Component ---
 
 const Home = () => {
+    const navigate = useNavigate();
     const [snowflakes, setSnowflakes] = useState([]);
 
     // Generate snowflakes on mount
@@ -142,7 +144,7 @@ const Home = () => {
                 </div>
 
                 {/* Action Button */}
-                <SantaButton onClick={() => alert("Ho Ho Ho! Access Granted.")} />
+                <SantaButton onClick={() => navigate('/admin/dashboard')} />
 
             </div>
         </div>
