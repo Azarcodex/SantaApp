@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+import elfRoutes from "./routes/elfRoutes.js";
 
 dotenv.config();
 
@@ -9,8 +11,51 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/santa_workshop";
 
-// TEMP DATA (acts like database)
+import Elf from "./models/Elf.js";
+
+// Database Connection
+mongoose.connect(MONGO_URI)
+    .then(async () => {
+        console.log("MongoDB Connected");
+        await seedElves();
+    })
+    .catch(err => {
+        console.error("MongoDB Connection Failed:", err);
+        console.log("Using In-Memory Fallback for non-Elf routes...");
+    });
+
+const seedElves = async () => {
+    try {
+        const count = await Elf.countDocuments();
+        if (count === 0) {
+            console.log("Seeding Elves...");
+            const curTime = new Date();
+            const initialElves = [
+                { name: "Buddy", role: "Toy Maker", status: "Active", fatigueLevel: 45, tasksAssigned: 12, tasksCompletedToday: 45, location: "Workshop A" },
+                { name: "Snowy", role: "QA", status: "Idle", fatigueLevel: 10, tasksAssigned: 0, tasksCompletedToday: 120, location: "Inspection Zone" },
+                { name: "Jingle", role: "Delivery Support", status: "Overloaded", fatigueLevel: 88, tasksAssigned: 8, tasksCompletedToday: 30, location: "Loading Bay" },
+                { name: "Twinkle", role: "Logistics", status: "Active", fatigueLevel: 30, tasksAssigned: 5, tasksCompletedToday: 200, location: "Warehouse 1" },
+                { name: "Peppermint", role: "Toy Maker", status: "Active", fatigueLevel: 60, tasksAssigned: 8, tasksCompletedToday: 55, location: "Workshop B" },
+                { name: "Cocoa", role: "QA", status: "Off-Duty", fatigueLevel: 20, tasksAssigned: 0, tasksCompletedToday: 80, location: "Break Room" },
+                { name: "Frosty", role: "Logistics", status: "Active", fatigueLevel: 55, tasksAssigned: 15, tasksCompletedToday: 150, location: "Warehouse 2" },
+                { name: "Sparkle", role: "Toy Maker", status: "Overloaded", fatigueLevel: 92, tasksAssigned: 14, tasksCompletedToday: 60, location: "Workshop A" },
+                { name: "Noel", role: "Delivery Support", status: "Active", fatigueLevel: 40, tasksAssigned: 4, tasksCompletedToday: 40, location: "Sleigh Port" },
+                { name: "Evergreen", role: "Toy Maker", status: "Idle", fatigueLevel: 5, tasksAssigned: 0, tasksCompletedToday: 0, location: "Workshop C" }
+            ];
+            await Elf.insertMany(initialElves);
+            console.log("Elves Seeding Complete!");
+        }
+    } catch (err) {
+        console.error("Seeding error:", err);
+    }
+};
+
+// Mount Elf Routes (DB Driven)
+app.use("/api/elves", elfRoutes);
+
+// TEMP DATA (acts like database for other routes)
 let christmasState = {
     dashboard: {
         giftsPrepared: 500000,
@@ -40,12 +85,6 @@ let christmasState = {
         { id: 18, country: "Saudi Arabia", status: "Delivered", giftsDelivered: 9000, lat: 23.8859, lng: 45.0792 },
         { id: 19, country: "New Zealand", status: "Delivered", giftsDelivered: 2000, lat: -40.9006, lng: 174.8860 },
         { id: 20, country: "Greenland", status: "Not Started", giftsDelivered: 0, lat: 71.7069, lng: -42.6043 }
-    ],
-
-    elves: [
-        { id: 1, name: "Buddy", role: "Toy Maker", status: "Working" },
-        { id: 2, name: "Snowy", role: "Packer", status: "Resting" },
-        { id: 3, name: "Jingle", role: "Delivery", status: "Working" },
     ],
 
     toys: {
@@ -84,9 +123,7 @@ app.get("/api/deliveries", (req, res) => {
     res.json(christmasState.deliveries);
 });
 
-app.get("/api/elves", (req, res) => {
-    res.json(christmasState.elves);
-});
+// app.get("/api/elves") is now handled by elfRoutes above
 
 app.get("/api/toys", (req, res) => {
     res.json(christmasState.toys);
